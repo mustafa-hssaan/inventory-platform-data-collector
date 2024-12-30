@@ -1,0 +1,1 @@
+# inventory-platform-data-collector
