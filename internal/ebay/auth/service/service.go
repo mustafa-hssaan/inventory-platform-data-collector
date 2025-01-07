@@ -5,30 +5,35 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"inventory-platform-data-collector/internal/ebay/auth/cache"
 	"inventory-platform-data-collector/internal/ebay/auth/models"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type Service struct {
-	configs    map[string]*models.OAuthConfig
-	tokenStore *cache.TokenStore
-	mu         sync.RWMutex
+	configs map[string]*models.OAuthConfig
+	redis   *redis.Client
+	mu      sync.RWMutex
 }
 
-func NewService(ctx context.Context, redisURL, encryptionKey string) (*Service, error) {
-	tokenStore, err := cache.NewTokenStore(ctx, redisURL, encryptionKey, "ebay:tokens")
+func NewService(ctx context.Context, redisURL string) (*Service, error) {
+	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
 		return nil, err
 	}
 
+	client := redis.NewClient(opt)
+	if err := client.Ping(ctx).Err(); err != nil {
+		return nil, err
+	}
 	return &Service{
-		configs:    make(map[string]*models.OAuthConfig),
-		tokenStore: tokenStore,
+		configs: make(map[string]*models.OAuthConfig),
+		redis:   client,
 	}, nil
 }
 func (s *Service) RegisterConfig(userID string, config *models.OAuthConfig) {
@@ -101,18 +106,32 @@ func (s *Service) ExchangeCodeForToken(ctx context.Context, userID, code string)
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
 		return err
 	}
-	return s.tokenStore.Set(ctx, userID, &cache.TokenCache{
+	token := &models.TokenCache{
 		AccessToken:  tokenResp.AccessToken,
 		TokenType:    tokenResp.TokenType,
 		RefreshToken: tokenResp.RefreshToken,
 		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
-	})
+	}
+	tokenJSON, err := json.Marshal(token)
+	if err != nil {
+		return err
+	}
+	return s.redis.Set(ctx, fmt.Sprintf("ebay:tokens:%s", userID), tokenJSON, 0).Err()
 }
 
 func (s *Service) GetAccessToken(ctx context.Context, userID string) (string, error) {
-	token, exists := s.tokenStore.Get(ctx, userID)
-	if !exists {
-		return "", fmt.Errorf("no valid token found for user: %s", userID)
+	tokenJSON, err := s.redis.Get(ctx, fmt.Sprintf("ebay:tokens:%s", userID)).Result()
+	if err != nil {
+		return "", fmt.Errorf("no valid token found for user: %s", err)
 	}
+	var token models.TokenCache
+	if err := json.Unmarshal([]byte(tokenJSON), &token); err != nil {
+		return "", err
+	}
+
+	if time.Now().After(token.ExpiresAt) {
+		return "", fmt.Errorf("token expired for user: %s", userID)
+	}
+
 	return token.AccessToken, nil
 }

@@ -38,7 +38,7 @@ func (h *Handler) HandleAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	state := userID // In production, use a secure state generation method
+	state := userID // use a secure state generation method
 	authURL, err := h.service.GetAuthURL(userID, state)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -62,8 +62,11 @@ func (h *Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status": "success",
+		"userId": state,
+	})
 }
 
 func (h *Handler) GetToken(w http.ResponseWriter, r *http.Request) {
@@ -79,5 +82,6 @@ func (h *Handler) GetToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"access_token": token})
 }
