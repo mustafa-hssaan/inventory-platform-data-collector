@@ -28,7 +28,7 @@ func (c *ProductClient) GetProduct(ctx context.Context, req models.GetProductReq
 	if err != nil {
 		return nil, fmt.Errorf("get access token: %w", err)
 	}
-	url := fmt.Sprintf("%s/buy/browse/v1/item/%s", c.config.BaseURL)
+	url := fmt.Sprintf("%s/buy/browse/v1/item/%s", c.config.BaseURL, req.ProductID)
 
 	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
