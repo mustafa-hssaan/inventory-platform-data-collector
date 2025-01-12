@@ -12,18 +12,21 @@ import (
 type FindingClient struct {
 	*BaseClient
 	authService *service.Service
-	userID      string
 }
 
-func NewFindingClient(config *Config, authService *service.Service, userID string) *FindingClient {
+func NewFindingClient(config *Config, authService *service.Service) *FindingClient {
 	return &FindingClient{
 		BaseClient:  NewBaseClient(config),
 		authService: authService,
-		userID:      userID,
 	}
 }
-func (c *FindingClient) Search(ctx context.Context, params models.SearchParams) (*models.SearchResponse, error) {
-	token, err := c.authService.GetAccessToken(ctx, c.userID)
+func (c *FindingClient) Search(ctx context.Context, params models.SearchParams, headers http.Header) (*models.SearchResponse, error) {
+	userID := headers.Get("X-User-ID")
+	if userID == "" {
+		return nil, fmt.Errorf("missing X-User-ID header")
+	}
+
+	token, err := c.authService.GetAccessToken(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get access token: %w", err)
 	}

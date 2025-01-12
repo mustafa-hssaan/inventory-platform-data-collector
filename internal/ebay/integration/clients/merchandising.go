@@ -12,19 +12,22 @@ import (
 type MerchandisingClient struct {
 	*BaseClient
 	authService *service.Service
-	userID      string
 }
 
-func NewMerchandisingClient(config *Config, authService *service.Service, userID string) *MerchandisingClient {
+func NewMerchandisingClient(config *Config, authService *service.Service) *MerchandisingClient {
 	return &MerchandisingClient{
 		BaseClient:  NewBaseClient(config),
 		authService: authService,
-		userID:      userID,
 	}
 }
 
-func (c *MerchandisingClient) GetDeals(ctx context.Context, req models.GetDealsRequest) (*models.DealsResponse, error) {
-	token, err := c.authService.GetAccessToken(ctx, c.userID)
+func (c *MerchandisingClient) GetDeals(ctx context.Context, req models.GetDealsRequest, headers http.Header) (*models.DealsResponse, error) {
+	userID := headers.Get("X-User-ID")
+	if userID == "" {
+		return nil, fmt.Errorf("missing X-User-ID header")
+	}
+
+	token, err := c.authService.GetAccessToken(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get access token: %w", err)
 	}

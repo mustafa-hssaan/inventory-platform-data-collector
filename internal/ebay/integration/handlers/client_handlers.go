@@ -1,4 +1,3 @@
-// handlers/client_handlers.go
 package client_handlers
 
 import (
@@ -14,9 +13,9 @@ type ClientHandler struct {
 	clientFactory *clients.ClientFactory
 }
 
-func NewClientHandler(authService *service.Service, userID string, environment string) *ClientHandler {
+func NewClientHandler(authService *service.Service, environment string) *ClientHandler {
 	return &ClientHandler{
-		clientFactory: clients.NewClientFactory(authService, userID, environment),
+		clientFactory: clients.NewClientFactory(authService, environment),
 	}
 }
 
@@ -46,7 +45,7 @@ func (h *ClientHandler) FindingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	findingClient := h.clientFactory.NewFindingClient()
-	result, err := findingClient.Search(r.Context(), params)
+	result, err := findingClient.Search(r.Context(), params, r.Header)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -74,7 +73,7 @@ func (h *ClientHandler) MerchandisingHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	merchandisingClient := h.clientFactory.NewMerchandisingClient()
-	result, err := merchandisingClient.GetDeals(r.Context(), request)
+	result, err := merchandisingClient.GetDeals(r.Context(), request, r.Header)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -99,7 +98,7 @@ func (h *ClientHandler) ProductHandler(w http.ResponseWriter, r *http.Request) {
 	productClient := h.clientFactory.NewProductClient()
 	result, err := productClient.GetProduct(r.Context(), models.GetProductRequest{
 		ProductID: productID,
-	})
+	}, r.Header)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -124,7 +123,7 @@ func (h *ClientHandler) TradingHandler(w http.ResponseWriter, r *http.Request) {
 	tradingClient := h.clientFactory.NewTradingClient()
 	result, err := tradingClient.GetItem(r.Context(), models.GetItemRequest{
 		ItemID: itemID,
-	})
+	}, r.Header)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

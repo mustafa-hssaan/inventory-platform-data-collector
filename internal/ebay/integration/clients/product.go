@@ -12,19 +12,22 @@ import (
 type ProductClient struct {
 	*BaseClient
 	authService *service.Service
-	userID      string
 }
 
-func NewProductClient(config *Config, authService *service.Service, userID string) *ProductClient {
+func NewProductClient(config *Config, authService *service.Service) *ProductClient {
 	return &ProductClient{
 		BaseClient:  NewBaseClient(config),
 		authService: authService,
-		userID:      userID,
 	}
 }
 
-func (c *ProductClient) GetProduct(ctx context.Context, req models.GetProductRequest) (*models.ProductResponse, error) {
-	token, err := c.authService.GetAccessToken(ctx, c.userID)
+func (c *ProductClient) GetProduct(ctx context.Context, req models.GetProductRequest, headers http.Header) (*models.ProductResponse, error) {
+	userID := headers.Get("X-User-ID")
+	if userID == "" {
+		return nil, fmt.Errorf("missing X-User-ID header")
+	}
+
+	token, err := c.authService.GetAccessToken(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get access token: %w", err)
 	}

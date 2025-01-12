@@ -110,7 +110,8 @@ func (s *Service) ExchangeCodeForToken(ctx context.Context, userID, code string)
 		AccessToken:  tokenResp.AccessToken,
 		TokenType:    tokenResp.TokenType,
 		RefreshToken: tokenResp.RefreshToken,
-		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+		// ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+		ExpiresAt: time.Now().Add(3 * 24 * time.Hour),
 	}
 	tokenJSON, err := json.Marshal(token)
 	if err != nil {

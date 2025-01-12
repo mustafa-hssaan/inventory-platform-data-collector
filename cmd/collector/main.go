@@ -21,7 +21,6 @@ func main() {
 	}
 
 	redisURL := os.Getenv("REDIS_URL")
-	userID := os.Getenv("EBAY_USER_ID")
 	environment := os.Getenv("EBAY_ENVIRONMENT")
 
 	authService, err := service.NewService(ctx, redisURL)
@@ -30,13 +29,11 @@ func main() {
 	}
 
 	handler := handlers.NewHandler(authService)
-
-	http.HandleFunc("/auth/config", handler.RegisterConfig)
-	http.HandleFunc("/auth/authorize", handler.HandleAuth)
 	http.HandleFunc("/auth/callback", handler.HandleCallback)
+	http.HandleFunc("/auth/register-and-start", handler.RegisterConfigAndStart)
+	http.HandleFunc("/auth/complete", handler.CompleteAuth)
 
-	clientHandler := client_handlers.NewClientHandler(authService, userID, environment)
-	http.HandleFunc("/auth/token", handler.GetToken)
+	clientHandler := client_handlers.NewClientHandler(authService, environment)
 
 	http.HandleFunc("/api/search", clientHandler.FindingHandler)
 	http.HandleFunc("/api/deals", clientHandler.MerchandisingHandler)

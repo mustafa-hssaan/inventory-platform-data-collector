@@ -12,19 +12,22 @@ import (
 type TradingClient struct {
 	*BaseClient
 	authService *service.Service
-	userID      string
 }
 
-func NewTradingClient(config *Config, authService *service.Service, userID string) *TradingClient {
+func NewTradingClient(config *Config, authService *service.Service) *TradingClient {
 	return &TradingClient{
 		BaseClient:  NewBaseClient(config),
 		authService: authService,
-		userID:      userID,
 	}
 }
 
-func (c *TradingClient) GetItem(ctx context.Context, req models.GetItemRequest) (*models.GetItemResponse, error) {
-	token, err := c.authService.GetAccessToken(ctx, c.userID)
+func (c *TradingClient) GetItem(ctx context.Context, req models.GetItemRequest, headers http.Header) (*models.GetItemResponse, error) {
+	userID := headers.Get("X-User-ID")
+	if userID == "" {
+		return nil, fmt.Errorf("missing X-User-ID header")
+	}
+
+	token, err := c.authService.GetAccessToken(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get access token: %w", err)
 	}
@@ -35,10 +38,6 @@ func (c *TradingClient) GetItem(ctx context.Context, req models.GetItemRequest) 
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 	c.setHeaders(request, token)
-
-	// request.Header.Set("X-EBAY-API-CALL-NAME", "GetItem")
-	// request.Header.Set("X-EBAY-API-APP-NAME", c.config.AppID)
-	// request.Header.Set("X-EBAY-API-VERSION", "967")
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {
