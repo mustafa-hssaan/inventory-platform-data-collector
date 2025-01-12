@@ -8,6 +8,7 @@ import (
 
 	"inventory-platform-data-collector/internal/ebay/auth/handlers"
 	"inventory-platform-data-collector/internal/ebay/auth/service"
+	client_handlers "inventory-platform-data-collector/internal/ebay/integration/handlers"
 
 	"github.com/joho/godotenv"
 )
@@ -20,6 +21,7 @@ func main() {
 	}
 
 	redisURL := os.Getenv("REDIS_URL")
+	environment := os.Getenv("EBAY_ENVIRONMENT")
 
 	authService, err := service.NewService(ctx, redisURL)
 	if err != nil {
@@ -27,11 +29,16 @@ func main() {
 	}
 
 	handler := handlers.NewHandler(authService)
-
-	http.HandleFunc("/auth/config", handler.RegisterConfig)
-	http.HandleFunc("/auth/authorize", handler.HandleAuth)
 	http.HandleFunc("/auth/callback", handler.HandleCallback)
-	http.HandleFunc("/auth/token", handler.GetToken)
+	http.HandleFunc("/auth/register-and-start", handler.RegisterConfigAndStart)
+	http.HandleFunc("/auth/complete", handler.CompleteAuth)
+
+	clientHandler := client_handlers.NewClientHandler(authService, environment)
+
+	http.HandleFunc("/api/search", clientHandler.FindingHandler)
+	http.HandleFunc("/api/deals", clientHandler.MerchandisingHandler)
+	http.HandleFunc("/api/product", clientHandler.ProductHandler)
+	http.HandleFunc("/api/item", clientHandler.TradingHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
