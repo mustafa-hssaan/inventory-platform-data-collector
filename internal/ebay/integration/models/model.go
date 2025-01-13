@@ -5,7 +5,7 @@ import "time"
 type Item struct {
 	ItemID          string            `json:"itemId"`
 	Title           string            `json:"title"`
-	CurrentPrice    Price             `json:"currentPrice"`
+	Price           Price             `json:"price"`
 	Condition       string            `json:"condition"`
 	QuantitySold    int               `json:"quantitySold"`
 	WatchCount      int               `json:"watchCount"`
@@ -52,8 +52,8 @@ type MarketPosition struct {
 }
 
 type Price struct {
-	Value    float64 `json:"value" xml:"Value"`
-	Currency string  `json:"currency" xml:"Currency"`
+	Value    string `json:"value" xml:"Value"`
+	Currency string `json:"currency" xml:"Currency"`
 }
 
 type Product struct {
