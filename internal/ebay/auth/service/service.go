@@ -71,6 +71,19 @@ func (s *Service) GetAuthURL(userID string, state string) (string, error) {
 }
 
 func (s *Service) ExchangeCodeForToken(ctx context.Context, userID, code string) error {
+	tokenKey := fmt.Sprintf("ebay:tokens:%s", userID)
+	cachedTokenJSON, err := s.redis.Get(ctx, tokenKey).Result()
+	fmt.Println("cachedTokenJSON", cachedTokenJSON)
+	if err == redis.Nil {
+		var cachedToken models.TokenCache
+		if err := json.Unmarshal([]byte(cachedTokenJSON), &cachedToken); err != nil {
+			return fmt.Errorf("failed to parse existing token: %w", err)
+		}
+		if time.Now().After(cachedToken.ExpiresAt) {
+			return s.RefreshExistingToken(ctx, userID, cachedToken.RefreshToken)
+		}
+		return nil
+	}
 	config, exists := s.GetConfig(userID)
 	if !exists {
 		return fmt.Errorf("configuration not found for user: %s", userID)
@@ -110,14 +123,60 @@ func (s *Service) ExchangeCodeForToken(ctx context.Context, userID, code string)
 		AccessToken:  tokenResp.AccessToken,
 		TokenType:    tokenResp.TokenType,
 		RefreshToken: tokenResp.RefreshToken,
-		// ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
-		ExpiresAt: time.Now().Add(3 * 24 * time.Hour),
+		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
 	}
 	tokenJSON, err := json.Marshal(token)
 	if err != nil {
 		return err
 	}
 	return s.redis.Set(ctx, fmt.Sprintf("ebay:tokens:%s", userID), tokenJSON, 0).Err()
+}
+func (s *Service) RefreshExistingToken(ctx context.Context, userID, refresh_token string) error {
+	config, exists := s.GetConfig(userID)
+	if !exists {
+		return fmt.Errorf("configuration not found for user: %s", userID)
+	}
+
+	baseURL := "https://api.sandbox.ebay.com/identity/v1/oauth2/token"
+	if config.Environment == "production" {
+		baseURL = "https://api.ebay.com/identity/v1/oauth2/token"
+	}
+
+	data := url.Values{}
+	data.Set("grant_type", "refresh_token")
+	data.Set("refresh_token", refresh_token)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", baseURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return err
+	}
+
+	auth := base64.StdEncoding.EncodeToString([]byte(config.ClientID + ":" + config.ClientSecret))
+	req.Header.Add("Authorization", "Basic "+auth)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	var tokenResp models.TokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
+		return err
+	}
+	updatedToken := &models.TokenCache{
+		AccessToken:  tokenResp.AccessToken,
+		TokenType:    tokenResp.TokenType,
+		RefreshToken: tokenResp.RefreshToken,
+		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+	}
+	updatedTokenJSON, err := json.Marshal(updatedToken)
+	if err != nil {
+		return err
+	}
+	return s.redis.Set(ctx, fmt.Sprintf("ebay:tokens:%s", userID), updatedTokenJSON, 0).Err()
 }
 
 func (s *Service) GetAccessToken(ctx context.Context, userID string) (string, error) {

@@ -118,17 +118,6 @@ func (h *Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	completeURL := fmt.Sprintf("/auth/complete?code=%s&state=%s", code, state)
 	http.Redirect(w, r, completeURL, http.StatusTemporaryRedirect)
-
-	// if err := h.service.ExchangeCodeForToken(r.Context(), state, code); err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// w.Header().Set("Content-Type", "application/json")
-	// json.NewEncoder(w).Encode(map[string]string{
-	// 	"status": "success",
-	// 	"userId": state,
-	// })
 }
 
 func (h *Handler) GetToken(w http.ResponseWriter, r *http.Request) {

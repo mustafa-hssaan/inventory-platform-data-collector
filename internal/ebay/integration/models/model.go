@@ -1,16 +1,54 @@
 package models
 
+import "time"
+
 type Item struct {
-	ID              string   `json:"itemId" xml:"ItemID"`
-	Title           string   `json:"title" xml:"Title"`
-	Price           Price    `json:"price" xml:"Price"`
-	Categories      []string `json:"categoryIds" xml:"CategoryIDs"`
-	Condition       string   `json:"condition" xml:"Condition"`
-	Description     string   `json:"description" xml:"Description"`
-	ImageURLs       []string `json:"imageUrls" xml:"ImageURLs"`
-	Location        string   `json:"location" xml:"Location"`
-	SellerUsername  string   `json:"sellerUsername" xml:"SellerUsername"`
-	ShippingOptions []string `json:"shippingOptions" xml:"ShippingOptions"`
+	ItemID          string            `json:"itemId"`
+	Title           string            `json:"title"`
+	CurrentPrice    Price             `json:"currentPrice"`
+	Condition       string            `json:"condition"`
+	QuantitySold    int               `json:"quantitySold"`
+	WatchCount      int               `json:"watchCount"`
+	ViewCount       int               `json:"viewCount"`
+	LastSold        time.Time         `json:"lastSold,omitempty"`
+	Seller          SellerInfo        `json:"seller"`
+	Location        Location          `json:"location"`
+	ShippingOptions []Shipping        `json:"shippingOptions"`
+	Specifics       map[string]string `json:"itemSpecifics"`
+	PriceHistory    []PricePoint      `json:"priceHistory"`
+	Reviews         []Review          `json:"reviews"`
+	SalesVelocity   float64           `json:"salesVelocity"`
+	MarketPosition  MarketPosition    `json:"marketPosition"`
+}
+type SellerInfo struct {
+	Username        string  `json:"username"`
+	FeedbackScore   int     `json:"feedbackScore"`
+	PositivePercent float64 `json:"positivePercent"`
+}
+type Location struct {
+	Country    string `json:"country"`
+	PostalCode string `json:"postalCode"`
+	Region     string `json:"region"`
+}
+type Shipping struct {
+	Service      string `json:"service"`
+	Cost         Price  `json:"cost"`
+	DeliveryDays int    `json:"deliveryDays"`
+}
+type PricePoint struct {
+	Price     Price     `json:"price"`
+	Timestamp time.Time `json:"timestamp"`
+}
+type Review struct {
+	Rating  int       `json:"rating"`
+	Comment string    `json:"comment"`
+	Date    time.Time `json:"date"`
+}
+type MarketPosition struct {
+	CompetitorPriceMin Price   `json:"competitorPriceMin"`
+	CompetitorPriceMax Price   `json:"competitorPriceMax"`
+	CompetitorPriceAvg Price   `json:"competitorPriceAvg"`
+	RelativePosition   float64 `json:"relativePosition"`
 }
 
 type Price struct {
@@ -43,7 +81,7 @@ type DealsResponse struct {
 }
 
 type SearchParams struct {
-	Keywords   string `json:"keywords"`
+	Q          string `json:"q"`
 	CategoryID string `json:"categoryId,omitempty"`
 	Limit      int    `json:"limit,omitempty"`
 	Offset     int    `json:"offset,omitempty"`
@@ -58,7 +96,7 @@ type GetItemResponse struct {
 }
 
 type SearchResponse struct {
-	Items      []Item     `json:"items"`
+	Items      []Item     `json:"itemSummaries"`
 	Pagination Pagination `json:"pagination"`
 }
 

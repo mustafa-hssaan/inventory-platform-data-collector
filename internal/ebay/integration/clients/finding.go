@@ -39,7 +39,7 @@ func (c *FindingClient) Search(ctx context.Context, params models.SearchParams, 
 
 	c.setHeaders(req, token)
 	q := req.URL.Query()
-	q.Add("q", params.Keywords)
+	q.Add("q", params.Q)
 	if params.CategoryID != "" {
 		q.Add("category_ids", params.CategoryID)
 	}
