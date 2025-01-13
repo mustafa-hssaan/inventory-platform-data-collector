@@ -27,7 +27,7 @@ func (h *ClientHandler) FindingHandler(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query()
 	params := models.SearchParams{
-		Keywords:   query.Get("keywords"),
+		Q:          query.Get("q"),
 		CategoryID: query.Get("category_id"),
 		SortOrder:  query.Get("sort_order"),
 	}
