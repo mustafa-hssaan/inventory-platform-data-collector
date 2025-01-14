@@ -1,4 +1,4 @@
-package model_BrowseItemResponse
+package browseitem
 
 type BrowseItemResponse struct {
 	ItemID string `json:"itemId"`

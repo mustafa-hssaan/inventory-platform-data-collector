@@ -1,4 +1,4 @@
-package model_ItemBrowseParams
+package browseitem
 
 type ItemBrowseParams struct {
 	FieldGroups                 string `json:"fieldGroups"`
