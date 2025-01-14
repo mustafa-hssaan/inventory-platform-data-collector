@@ -5,8 +5,12 @@ import (
 	"inventory-platform-data-collector/internal/ebay/auth/service"
 	clients "inventory-platform-data-collector/internal/ebay/integration/factory"
 	"inventory-platform-data-collector/internal/ebay/integration/models"
+	model_GetBrowseItemRequest "inventory-platform-data-collector/internal/ebay/integration/models/GetBrowseItemRequest"
+	model_ItemBrowseParams "inventory-platform-data-collector/internal/ebay/integration/models/ItemBrowseParams"
+
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type ClientHandler struct {
@@ -24,30 +28,27 @@ func (h *ClientHandler) FindingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-
+	itemID := r.URL.Query().Get("item_id")
+	if itemID == "" {
+		http.Error(w, "Missing item_id", http.StatusBadRequest)
+		return
+	}
 	query := r.URL.Query()
-	params := models.SearchParams{
-		Q:          query.Get("q"),
-		CategoryID: query.Get("category_id"),
-		SortOrder:  query.Get("sort_order"),
-	}
-
-	if limit := query.Get("limit"); limit != "" {
-		if l, err := strconv.Atoi(limit); err == nil {
-			params.Limit = l
-		}
-	}
-
-	if offset := query.Get("offset"); offset != "" {
-		if o, err := strconv.Atoi(offset); err == nil {
-			params.Offset = o
-		}
+	params := model_ItemBrowseParams.ItemBrowseParams{
+		FieldGroups:                 query.Get("fieldGroups"),
+		QuantityForShippingEstimate: query.Get("quantity_for_shipping_estimate"),
 	}
 
 	findingClient := h.clientFactory.NewFindingClient()
-	result, err := findingClient.Search(r.Context(), params, r.Header)
+	result, err := findingClient.FindItemDetailsByID(r.Context(), model_GetBrowseItemRequest.GetBrowseItemRequest{
+		ItemID: itemID,
+	}, params, r.Header)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, "Item not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 

@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory-platform-data-collector/internal/ebay/auth/service"
-	"inventory-platform-data-collector/internal/ebay/integration/models"
+	model_GetBrowseItemRequest "inventory-platform-data-collector/internal/ebay/integration/models/GetBrowseItemRequest"
+	model_ItemBrowseParams "inventory-platform-data-collector/internal/ebay/integration/models/ItemBrowseParams"
+	model_BrowseItemResponse "inventory-platform-data-collector/internal/ebay/integration/models/ItemBrowseResponse"
+	"io"
 	"net/http"
 )
 
@@ -20,7 +23,8 @@ func NewFindingClient(config *Config, authService *service.Service) *FindingClie
 		authService: authService,
 	}
 }
-func (c *FindingClient) Search(ctx context.Context, params models.SearchParams, headers http.Header) (*models.SearchResponse, error) {
+
+func (c *FindingClient) FindItemDetailsByID(ctx context.Context, itemRequest model_GetBrowseItemRequest.GetBrowseItemRequest, params model_ItemBrowseParams.ItemBrowseParams, headers http.Header) (*model_BrowseItemResponse.BrowseItemResponse, error) {
 	userID := headers.Get("X-User-ID")
 	if userID == "" {
 		return nil, fmt.Errorf("missing X-User-ID header")
@@ -30,28 +34,35 @@ func (c *FindingClient) Search(ctx context.Context, params models.SearchParams, 
 	if err != nil {
 		return nil, fmt.Errorf("get access token: %w", err)
 	}
+	itemID := fmt.Sprintf("v1|%s|0", itemRequest.ItemID)
 
-	url := fmt.Sprintf("%s/buy/browse/v1/item_summary/search", c.config.BaseURL)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	url := fmt.Sprintf("%s/buy/browse/v1/item/%s", c.config.BaseURL, itemID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 
-	c.setHeaders(req, token)
-	q := req.URL.Query()
-	q.Add("q", params.Q)
-	if params.CategoryID != "" {
-		q.Add("category_ids", params.CategoryID)
+	c.setHeaders(httpReq, token)
+	q := httpReq.URL.Query()
+	if params.FieldGroups != "" {
+		q.Add("fieldGroups", params.FieldGroups)
 	}
-	req.URL.RawQuery = q.Encode()
+	if params.QuantityForShippingEstimate != "" {
+		q.Add("quantity_for_shipping_estimate", params.QuantityForShippingEstimate)
+	}
+	httpReq.URL.RawQuery = q.Encode()
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	var result models.SearchResponse
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code: %d, response: %v", resp.StatusCode, string(body))
+	}
+	var result model_BrowseItemResponse.BrowseItemResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
