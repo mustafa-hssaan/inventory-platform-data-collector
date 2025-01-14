@@ -50,12 +50,10 @@ type MarketPosition struct {
 	CompetitorPriceAvg Price   `json:"competitorPriceAvg"`
 	RelativePosition   float64 `json:"relativePosition"`
 }
-
 type Price struct {
 	Value    string `json:"value" xml:"Value"`
 	Currency string `json:"currency" xml:"Currency"`
 }
-
 type Product struct {
 	ID          string   `json:"productId"`
 	Title       string   `json:"title"`
@@ -67,7 +65,6 @@ type Product struct {
 type GetProductRequest struct {
 	ProductID string
 }
-
 type ProductResponse struct {
 	Product Product `json:"product"`
 }
@@ -75,11 +72,9 @@ type GetDealsRequest struct {
 	CategoryID string
 	Limit      int
 }
-
 type DealsResponse struct {
 	Items []Item `json:"items"`
 }
-
 type SearchParams struct {
 	Q          string `json:"q"`
 	CategoryID string `json:"categoryId,omitempty"`
@@ -90,18 +85,62 @@ type SearchParams struct {
 type GetItemRequest struct {
 	ItemID string
 }
-
 type GetItemResponse struct {
 	Item Item `xml:"Item"`
 }
-
 type SearchResponse struct {
 	Items      []Item     `json:"itemSummaries"`
 	Pagination Pagination `json:"pagination"`
 }
-
 type Pagination struct {
 	Total  int `json:"total"`
 	Limit  int `json:"limit"`
 	Offset int `json:"offset"`
+}
+type GetItemDetailsRequest struct {
+	ItemID string
+}
+
+type AnalyticsResponse struct {
+	Records []struct {
+		Date    string `json:"date"`
+		Metrics struct {
+			ViewCount  int `json:"viewCount"`
+			WatchCount int `json:"watchCount"`
+			SalesCount int `json:"salesCount"`
+		} `json:"metrics"`
+	} `json:"records"`
+}
+type FeedbackResponse struct {
+	Seller struct {
+		FeedbackScore   int     `json:"feedbackScore"`
+		PositivePercent float64 `json:"positiveFeedbackPercent"`
+	} `json:"seller"`
+	Reviews []struct {
+		Rating      int    `json:"rating"`
+		Comment     string `json:"comment"`
+		CreatedDate string `json:"createdDate"`
+	} `json:"reviews"`
+}
+type CatalogResponse struct {
+	Products []struct {
+		MinPrice struct {
+			Value    float64 `json:"value"`
+			Currency string  `json:"currency"`
+		} `json:"minPrice"`
+		MaxPrice struct {
+			Value    float64 `json:"value"`
+			Currency string  `json:"currency"`
+		} `json:"maxPrice"`
+		AveragePrice struct {
+			Value    float64 `json:"value"`
+			Currency string  `json:"currency"`
+		} `json:"averagePrice"`
+	} `json:"products"`
+}
+type ShipToLocations struct {
+}
+type regions struct {
+	RegionName string `json:"regionName"`
+	RegionType string `json:"`
 }

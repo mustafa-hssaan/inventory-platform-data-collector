@@ -35,7 +35,7 @@ func main() {
 
 	clientHandler := client_handlers.NewClientHandler(authService, environment)
 
-	http.HandleFunc("/api/search", clientHandler.FindingHandler)
+	http.HandleFunc("/api/browseItemsDetails", clientHandler.FindingHandler)
 	http.HandleFunc("/api/deals", clientHandler.MerchandisingHandler)
 	http.HandleFunc("/api/product", clientHandler.ProductHandler)
 	http.HandleFunc("/api/item", clientHandler.TradingHandler)
