@@ -36,9 +36,6 @@ func main() {
 	clientHandler := client_handlers.NewClientHandler(authService, environment)
 
 	http.HandleFunc("/api/browseItemsDetails", clientHandler.FindingHandler)
-	http.HandleFunc("/api/deals", clientHandler.MerchandisingHandler)
-	http.HandleFunc("/api/product", clientHandler.ProductHandler)
-	http.HandleFunc("/api/item", clientHandler.TradingHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

@@ -1,4 +1,4 @@
-package model_GetBrowseItemRequest
+package browseitem
 
 type GetBrowseItemRequest struct {
 	ItemID string

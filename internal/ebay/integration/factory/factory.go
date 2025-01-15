@@ -28,14 +28,3 @@ func NewClientFactory(authService *service.Service, environment string) *ClientF
 func (f *ClientFactory) NewFindingClient() *clients.FindingClient {
 	return clients.NewFindingClient(f.config, f.authService)
 }
-
-func (f *ClientFactory) NewMerchandisingClient() *clients.MerchandisingClient {
-	return clients.NewMerchandisingClient(f.config, f.authService)
-}
-func (f *ClientFactory) NewProductClient() *clients.ProductClient {
-	return clients.NewProductClient(f.config, f.authService)
-}
-
-func (f *ClientFactory) NewTradingClient() *clients.TradingClient {
-	return clients.NewTradingClient(f.config, f.authService)
-}

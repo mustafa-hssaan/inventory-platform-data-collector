@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory-platform-data-collector/internal/ebay/auth/service"
-	model_GetBrowseItemRequest "inventory-platform-data-collector/internal/ebay/integration/models/GetBrowseItemRequest"
-	model_ItemBrowseParams "inventory-platform-data-collector/internal/ebay/integration/models/ItemBrowseParams"
-	model_BrowseItemResponse "inventory-platform-data-collector/internal/ebay/integration/models/ItemBrowseResponse"
+	"inventory-platform-data-collector/internal/ebay/integration/models/browseitem"
 	"io"
 	"net/http"
 )
@@ -24,7 +22,7 @@ func NewFindingClient(config *Config, authService *service.Service) *FindingClie
 	}
 }
 
-func (c *FindingClient) FindItemDetailsByID(ctx context.Context, itemRequest model_GetBrowseItemRequest.GetBrowseItemRequest, params model_ItemBrowseParams.ItemBrowseParams, headers http.Header) (*model_BrowseItemResponse.BrowseItemResponse, error) {
+func (c *FindingClient) FindItemDetailsByID(ctx context.Context, itemRequest browseitem.GetBrowseItemRequest, params browseitem.ItemBrowseParams, headers http.Header) (*browseitem.BrowseItemResponse, error) {
 	userID := headers.Get("X-User-ID")
 	if userID == "" {
 		return nil, fmt.Errorf("missing X-User-ID header")
@@ -62,7 +60,7 @@ func (c *FindingClient) FindItemDetailsByID(ctx context.Context, itemRequest mod
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("unexpected status code: %d, response: %v", resp.StatusCode, string(body))
 	}
-	var result model_BrowseItemResponse.BrowseItemResponse
+	var result browseitem.BrowseItemResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
