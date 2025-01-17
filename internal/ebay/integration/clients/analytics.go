@@ -5,24 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"inventory-platform-data-collector/internal/ebay/auth/service"
-	"inventory-platform-data-collector/internal/ebay/integration/models/browseitem"
+	"inventory-platform-data-collector/internal/ebay/integration/models/analytics"
 	"io"
 	"net/http"
 )
 
-type FindingClient struct {
+type AnalyticsClient struct {
 	*BaseClient
 	authService *service.Service
 }
 
-func NewFindingClient(config *Config, authService *service.Service) *FindingClient {
-	return &FindingClient{
+func CreateAnalyticsClient(config *Config, authService *service.Service) *AnalyticsClient {
+	return &AnalyticsClient{
 		BaseClient:  NewBaseClient(config),
 		authService: authService,
 	}
 }
-
-func (c *FindingClient) FindItemDetailsByID(ctx context.Context, itemRequest browseitem.GetBrowseItemRequest, params browseitem.ItemBrowseParams, headers http.Header) (*browseitem.BrowseItemResponse, error) {
+func (c *AnalyticsClient) GetTrafficReport(ctx context.Context, params analytics.TrafficReportParam, headers http.Header) (*analytics.TrafficReportResponse, error) {
 	userID := headers.Get("X-User-ID")
 	if userID == "" {
 		return nil, fmt.Errorf("missing X-User-ID header")
@@ -32,9 +31,7 @@ func (c *FindingClient) FindItemDetailsByID(ctx context.Context, itemRequest bro
 	if err != nil {
 		return nil, fmt.Errorf("get access token: %w", err)
 	}
-	itemID := fmt.Sprintf("v1|%s|0", itemRequest.ItemID)
-
-	url := fmt.Sprintf("%s/buy/browse/v1/item/%s", c.config.BaseURL, itemID)
+	url := fmt.Sprintf("%s/sell/analytics/v1/traffic_report", c.config.BaseURL)
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
@@ -42,11 +39,17 @@ func (c *FindingClient) FindItemDetailsByID(ctx context.Context, itemRequest bro
 
 	c.setHeaders(httpReq, token)
 	q := httpReq.URL.Query()
-	if params.FieldGroups != "" {
-		q.Add("fieldGroups", params.FieldGroups)
+	if params.Dimension != "" {
+		q.Add("dimension", params.Dimension)
 	}
-	if params.QuantityForShippingEstimate != "" {
-		q.Add("quantity_for_shipping_estimate", params.QuantityForShippingEstimate)
+	if params.Filter != "" {
+		q.Add("filter", params.Filter)
+	}
+	if params.Metric != "" {
+		q.Add("metric", params.Metric)
+	}
+	if params.Sort != "" {
+		q.Add("sort", params.Sort)
 	}
 	httpReq.URL.RawQuery = q.Encode()
 
@@ -60,7 +63,7 @@ func (c *FindingClient) FindItemDetailsByID(ctx context.Context, itemRequest bro
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("unexpected status code: %d, response: %v", resp.StatusCode, string(body))
 	}
-	var result browseitem.BrowseItemResponse
+	var result analytics.TrafficReportResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
