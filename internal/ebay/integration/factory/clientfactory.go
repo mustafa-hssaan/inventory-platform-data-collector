@@ -25,6 +25,9 @@ func NewClientFactory(authService *service.Service, environment string) *ClientF
 	}
 }
 
-func (f *ClientFactory) NewFindingClient() *clients.FindingClient {
-	return clients.NewFindingClient(f.config, f.authService)
+func (f *ClientFactory) NewItemBrowseClient() *clients.ItemsBrowseClient {
+	return clients.CreateItemBrowseClient(f.config, f.authService)
+}
+func (f *ClientFactory) NewAnalyticsClient() *clients.AnalyticsClient {
+	return clients.CreateAnalyticsClient(f.config, f.authService)
 }

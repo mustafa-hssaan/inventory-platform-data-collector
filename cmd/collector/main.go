@@ -36,6 +36,7 @@ func main() {
 	clientHandler := client_handlers.NewClientHandler(authService, environment)
 
 	http.HandleFunc("/api/browseItemsDetails", clientHandler.FindingHandler)
+	http.HandleFunc("/api/trafficReport", clientHandler.GetTrafficReport)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
