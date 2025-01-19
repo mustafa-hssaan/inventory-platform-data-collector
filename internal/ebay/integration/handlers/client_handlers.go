@@ -6,7 +6,9 @@ import (
 	clients "inventory-platform-data-collector/internal/ebay/integration/factory"
 	"inventory-platform-data-collector/internal/ebay/integration/models/analytics"
 	"inventory-platform-data-collector/internal/ebay/integration/models/browseitem"
+	"inventory-platform-data-collector/internal/ebay/integration/models/pagination"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -67,6 +69,44 @@ func (h *ClientHandler) GetTrafficReport(w http.ResponseWriter, r *http.Request)
 
 	analyticsClient := h.clientFactory.NewAnalyticsClient()
 	result, err := analyticsClient.GetTrafficReport(r.Context(), params, r.Header)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, "No reports found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+func (h *ClientHandler) GetInventoryItems(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	query := r.URL.Query()
+	params := pagination.PaginationParams{}
+	if limitStr := query.Get("limit"); limitStr != "" {
+		if limit, err := strconv.Atoi(limitStr); err == nil {
+			params.Limit = &limit
+		} else {
+			http.Error(w, "Invalid limit parameter", http.StatusBadRequest)
+			return
+		}
+	}
+	if offsetStr := query.Get("offset"); offsetStr != "" {
+		if offset, err := strconv.Atoi(offsetStr); err == nil {
+			params.Offset = &offset
+		} else {
+			http.Error(w, "Invalid offset parameter", http.StatusBadRequest)
+			return
+		}
+	}
+
+	inventoryItemsClient := h.clientFactory.NewInvetoryItemsClient()
+	result, err := inventoryItemsClient.GetInventoryItemsDetails(r.Context(), params, r.Header)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			http.Error(w, "No reports found", http.StatusNotFound)

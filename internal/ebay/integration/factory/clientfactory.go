@@ -31,3 +31,6 @@ func (f *ClientFactory) NewItemBrowseClient() *clients.ItemsBrowseClient {
 func (f *ClientFactory) NewAnalyticsClient() *clients.AnalyticsClient {
 	return clients.CreateAnalyticsClient(f.config, f.authService)
 }
+func (f *ClientFactory) NewInvetoryItemsClient() *clients.InventoryItemsClient {
+	return clients.CreateInventoryItemsClient(f.config, f.authService)
+}

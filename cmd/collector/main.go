@@ -37,6 +37,7 @@ func main() {
 
 	http.HandleFunc("/api/browseItemsDetails", clientHandler.FindingHandler)
 	http.HandleFunc("/api/trafficReport", clientHandler.GetTrafficReport)
+	http.HandleFunc("/api/inventoryItems", clientHandler.GetInventoryItems)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
