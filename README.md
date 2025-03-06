@@ -1,4 +1,4 @@
-# Inventory Platform Collector
+# Inventory Platform Collector (under development)
 High-performance data collection service built in Go for real-time inventory data processing from eBay's API. Part of the Inventory Analytics Platform suite.
 
 ## Features
